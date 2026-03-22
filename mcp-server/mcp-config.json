@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "buildpad": {
+      "command": "python3",
+      "args": ["/root/.openclaw/workspace/services/buildpad-mcp-server/server.py"],
+      "env": {
+        "BUILDPAD_API": "http://localhost:3005",
+        "FEE_WALLET": "0x9912B5793C6c0dC32Cf888295bC317df275685FF"
+      }
+    }
+  }
+}

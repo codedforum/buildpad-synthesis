@@ -1,0 +1,53 @@
+{
+  "chain": "base",
+  "chainId": 8453,
+  "deployedAt": "2026-03-14T13:27:00Z",
+  "deployer": "0x0F4a26bC291D661e382DD3716dc6c09b952f2119",
+  "contracts": {
+    "BuildPadFeeHook": {
+      "address": "0xe0a19b19E3e6980067Cbc8D983bCb11eAB485044",
+      "note": "Previously deployed (CREATE2)"
+    },
+    "SwapHelper": {
+      "address": "0x810CFEF5f6fdDA9f300E70DdB1a2f9F6D0ffAe84",
+      "note": "Previously deployed"
+    },
+    "BuildPadGraduator": {
+      "address": "0x185aa543C7045902C6b03df26af3B8C597028f94",
+      "txHash": "0x6c452558e067c2663f5fa7b71cfe0a462d9f9b81a99eda4228ba962eceaeb563",
+      "constructorArgs": "none (Ownable, owner = deployer)"
+    },
+    "BuildPadVesting": {
+      "address": "0xC0d0950b5734cbA55872d1DAeF8aDEa09Ea0CF98",
+      "txHash": "0xb4955269c35feff472ee2e8ca7d5b3366304601665c04288a08d527dc23c01fc",
+      "constructorArgs": "none (factory, deploys VestingWalletCliff per vest)"
+    },
+    "BuildPadLPLock": {
+      "address": "0xf5F7DD72b22b891Cbb3E54d830d79d52170e1Ec0",
+      "txHash": "0x2de274af30385c3cdd05446a61af28864ef399184664a30c4e6204cb691c76be",
+      "constructorArgs": "positionManager=0x7c5f5a4bbd8fd63184577525326123b519429bdc"
+    },
+    "BuildPadAirdrop": {
+      "address": "0x25AE80FF550c304FebD4878073ddC7D79AA1B9C3",
+      "txHash": "0xbc6287d7cc134493b4222ec06467a7dd78bed72d6819bbf20ffa6314d977b850",
+      "constructorArgs": "none"
+    },
+    "BuildPadAuditBadge": {
+      "address": "0xE6A28165EDCC2Aa4E8fE18c278056412d4FF2A9f",
+      "txHash": "0x0318c30658d0f1733dde1e83d4cfe1c6199028b32642414cbca89be9e118cb26",
+      "constructorArgs": "owner=0x0F4a26bC291D661e382DD3716dc6c09b952f2119"
+    },
+    "BuildPadGovernance": {
+      "address": "0x6190D21dB1Fbd1Afd06AF85eac9326376deC985d",
+      "txHash": "0x8c841624047d0c8e0fc664a2d1f1a92ea8032e6f7e71656096538887a1bba4ed",
+      "constructorArgs": "none"
+    },
+    "BondingCurve": {
+      "note": "Per-token contract (not a singleton). Deployed via `new BondingCurve(...)` when creating bonding curves. No singleton deployment needed.",
+      "template": "src/BondingCurve.sol"
+    },
+    "BuildPadToken": {
+      "note": "Per-token contract. Deployed per token launch."
+    }
+  }
+}
