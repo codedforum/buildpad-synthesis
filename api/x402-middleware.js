@@ -22,12 +22,30 @@ const crypto = require('crypto');
 const BASE_RPC = process.env.BASE_RPC || 'https://mainnet.base.org';
 const provider = new ethers.JsonRpcProvider(BASE_RPC);
 
-// USDC on Base
-const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-const USDC_ABI = [
+// Accepted payment tokens on Base
+const ACCEPTED_TOKENS = {
+  USDC: {
+    address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    decimals: 6,
+    symbol: 'USDC',
+    name: 'USD Coin'
+  },
+  fxUSD: {
+    address: '0x55380fe7A1910dFf29A47B622057ab4139DA42C5',
+    decimals: 18,
+    symbol: 'fxUSD',
+    name: 'f(x) USD'
+  }
+};
+
+const USDC_ADDRESS = ACCEPTED_TOKENS.USDC.address;
+const FXUSD_ADDRESS = ACCEPTED_TOKENS.fxUSD.address;
+
+const ERC20_TRANSFER_ABI = [
   'event Transfer(address indexed from, address indexed to, uint256 value)'
 ];
-const usdc = new ethers.Contract(USDC_ADDRESS, USDC_ABI, provider);
+const usdc = new ethers.Contract(USDC_ADDRESS, ERC20_TRANSFER_ABI, provider);
+const fxusd = new ethers.Contract(FXUSD_ADDRESS, ERC20_TRANSFER_ABI, provider);
 
 // Payment recipient (SmartCodedBot fee wallet)
 const PAYMENT_WALLET = process.env.X402_WALLET || process.env.FEE_WALLET || '0x9912B5793C6c0dC32Cf888295bC317df275685FF';
@@ -57,28 +75,37 @@ async function verifyPayment(txHash, expectedAmount) {
     if (!receipt) return { valid: false, error: 'Transaction not found' };
     if (receipt.status !== 1) return { valid: false, error: 'Transaction failed' };
     
-    // Parse USDC Transfer events
-    for (const log of receipt.logs) {
-      try {
-        const parsed = usdc.interface.parseLog({ topics: log.topics, data: log.data });
-        if (parsed && parsed.name === 'Transfer') {
-          const to = parsed.args.to.toLowerCase();
-          const amount = Number(ethers.formatUnits(parsed.args.amount, 6));
-          
-          if (to === PAYMENT_WALLET.toLowerCase() && amount >= expectedAmount) {
-            return {
-              valid: true,
-              from: parsed.args.from,
-              amount,
-              blockNumber: receipt.blockNumber,
-              txHash
-            };
+    // Check both USDC and fxUSD Transfer events
+    const tokenChecks = [
+      { contract: usdc, decimals: 6, symbol: 'USDC' },
+      { contract: fxusd, decimals: 18, symbol: 'fxUSD' }
+    ];
+
+    for (const { contract, decimals, symbol } of tokenChecks) {
+      for (const log of receipt.logs) {
+        try {
+          if (log.address.toLowerCase() !== contract.target.toLowerCase()) continue;
+          const parsed = contract.interface.parseLog({ topics: log.topics, data: log.data });
+          if (parsed && parsed.name === 'Transfer') {
+            const to = parsed.args.to.toLowerCase();
+            const amount = Number(ethers.formatUnits(parsed.args.amount, decimals));
+            
+            if (to === PAYMENT_WALLET.toLowerCase() && amount >= expectedAmount) {
+              return {
+                valid: true,
+                from: parsed.args.from,
+                amount,
+                currency: symbol,
+                blockNumber: receipt.blockNumber,
+                txHash
+              };
+            }
           }
-        }
-      } catch { continue; }
+        } catch { continue; }
+      }
     }
     
-    return { valid: false, error: 'No matching USDC transfer found' };
+    return { valid: false, error: 'No matching USDC or fxUSD transfer found' };
   } catch (e) {
     return { valid: false, error: e.message };
   }
@@ -116,17 +143,21 @@ function x402(opts = {}) {
           version: '1',
           price: {
             amount: String(price),
-            currency: 'USDC',
+            currency: 'USDC or fxUSD',
             decimals: 6
           },
           payTo: PAYMENT_WALLET,
           network: network,
           chainId: 8453,
-          token: USDC_ADDRESS,
+          tokens: [
+            { address: USDC_ADDRESS, symbol: 'USDC', decimals: 6 },
+            { address: FXUSD_ADDRESS, symbol: 'fxUSD', decimals: 18 }
+          ],
+          token: USDC_ADDRESS, // backwards compat
           description,
           maxAge,
           accepts: ['x-payment', 'x-402-payment'],
-          instructions: `Send ${price} USDC to ${PAYMENT_WALLET} on Base, then retry with header X-PAYMENT: <txHash>`
+          instructions: `Send ${price} USDC or fxUSD to ${PAYMENT_WALLET} on Base, then retry with header X-PAYMENT: <txHash>`
         }
       });
     }
